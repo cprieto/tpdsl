@@ -1,16 +1,33 @@
 package com.cprieto.learning.tpdsl;
 
-public class ListLexer {
-    private char currentCharacter;
-    private int currentPosition = 0;
-    private String input;
+public class ListLexer extends Lexer {
 
     public ListLexer(String input) {
-        this.input = input;
-        currentCharacter = input.charAt(0);
+        super(input);
     }
 
     public Token nextToken() {
-        return null;
+        while (currentCharacter != EOF) {
+            switch (currentCharacter) {
+                case ' ':
+                case '\t':
+                case '\n':
+                case '\r':
+                    whitespace();
+                    continue;
+                case '[':
+                    consume();
+                    return new Token(ListToken.LBRACK, "[");
+                case ',':
+                    consume();
+                    return new Token(ListToken.COMMA, ",");
+                case ']':
+                    consume();
+                    return new Token(ListToken.RBRACK, "]");
+                default:
+                    return name();
+            }
+        }
+        return new EOFToken();
     }
 }

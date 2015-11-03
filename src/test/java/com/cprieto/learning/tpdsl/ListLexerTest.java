@@ -18,24 +18,26 @@ public class ListLexerTest {
     @Test
     public void itCanParseList() {
         ListLexer lexer = new ListLexer("[a,b]");
-        Token token = lexer.nextToken();
-        int n = 0;
-        while (token.type != ListToken.EOF) {
-            assertThat(token.type, is(expected[n].type));
-            assertThat(token.text, is(expected[n].text));
-            n += 1;
-        }
+
+        assertExpectedTokens(lexer);
     }
 
     @Test
     public void itIgnoresSpaces() {
         ListLexer lexer = new ListLexer("[a ,   b]");
+
+        assertExpectedTokens(lexer);
+    }
+
+    private void assertExpectedTokens(ListLexer lexer) {
         Token token = lexer.nextToken();
         int n = 0;
+
         while (token.type != ListToken.EOF) {
             assertThat(token.type, is(expected[n].type));
             assertThat(token.text, is(expected[n].text));
             n += 1;
+            token = lexer.nextToken();
         }
     }
 }
