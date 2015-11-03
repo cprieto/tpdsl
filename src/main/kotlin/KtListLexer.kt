@@ -1,3 +1,48 @@
-/**
- * Created by cprieto on 29/10/2015.
- */
+package com.cprieto.learning.tpdsl.kt
+
+enum class TokenName {
+    LBRACK, NAME, COMMA, RBRACK, EOF
+}
+
+data class Token(val type:TokenName, val text: String) {
+    override fun toString() = "<'$text', $type>"
+}
+
+fun Char.choseTokenFromChar():Token? =
+    when(this) {
+        '[' -> Token(TokenName.LBRACK, "[")
+        ',' -> Token(TokenName.COMMA, ",")
+        ']' -> Token(TokenName.RBRACK, "]")
+        else -> null
+    }
+
+class ListLexer(private val input: String):  Iterable<Token> {
+    private val EOF = (-1).toChar()
+
+    override fun iterator(): Iterator<Token> {
+        if (input.isBlank())
+            return object: Iterator<Token> {
+                private var counter = 0
+                override fun next(): Token {
+                    if (counter >= 1)
+                        throw StringIndexOutOfBoundsException()
+                    return Token(TokenName.EOF, "<EOF>")
+                }
+
+                override fun hasNext() = counter == 0
+            }
+
+        return object: Iterator<Token> {
+            private val currentPosition = 0
+            private val currentCharacter: Char
+                get() = input[currentPosition]
+
+            override fun next(): Token {
+                val token = currentCharacter.choseTokenFromChar()
+                return token ?: Token(TokenName.EOF, "<EOF>")
+            }
+
+            override fun hasNext(): Boolean = currentPosition <= input.length
+        }
+    }
+}
