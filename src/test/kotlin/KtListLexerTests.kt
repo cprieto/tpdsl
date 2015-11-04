@@ -1,11 +1,11 @@
 package com.cprieto.learning.tpdsl.kt
 
 import org.junit.Test as test
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 import org.hamcrest.CoreMatchers.`is`
 import org.junit.Assert.assertThat
-import org.junit.runner.RunWith
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 
 
 class KtListLexerTests {
@@ -21,6 +21,14 @@ class KtListLexerTests {
         val iterator = ListLexer("").iterator()
 
         assertTrue(iterator.hasNext())
+    }
+
+    @test
+    fun itDoesNotHaveMoreElementWhenAlreadyCalled() {
+        val iterator = ListLexer("").iterator()
+
+        iterator.next()
+        assertFalse("Second time in empty string it should have not more element", iterator.hasNext())
     }
 
     @test
@@ -63,6 +71,26 @@ class KtListLexerTests {
         val expected = Token(TokenName.RBRACK, "]")
         assertTokenIs(expected, "]")
     }
+
+    @test
+    fun itCanExtractName() {
+        val expected = Token(TokenName.NAME, "a")
+        assertTokenIs(expected, "a")
+    }
+
+//    fun itCanParseExpression() {
+//        val lexer = ListLexer("[a")
+//        val iterator = lexer.iterator()
+//
+//        assertTrue(iterator.hasNext())
+//
+//        var token = iterator.next()
+//        assertNotNull(token)
+//
+//        assertEquals(TokenName.LBRACK, token.type)
+//
+//        assertTrue(iterator.hasNext())
+//    }
 
     private fun assertTokenIs(expected: Token, input: String) {
         val lexer = ListLexer(input)
