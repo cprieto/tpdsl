@@ -17,6 +17,7 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:1.0.0+"
     testCompile "junit:junit:4.12"
+    testCompile "com.tngtech.java:junit-dataprovider:1.10.0+"
 }
 
 test {

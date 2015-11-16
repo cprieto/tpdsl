@@ -1,14 +1,18 @@
 package com.cprieto.learning.tpdsl.kt
 
+import com.tngtech.java.junit.dataprovider.DataProvider as dataProvider
 import org.junit.Test as test
-import org.hamcrest.CoreMatchers.`is`
-import org.junit.Assert.assertThat
-import org.junit.Assert.assertTrue
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertEquals
+import com.tngtech.java.junit.dataprovider.DataProviderRunner
+import com.tngtech.java.junit.dataprovider.UseDataProvider as useProvider
+import org.junit.runner.RunWith as runWith
 
 
+
+@runWith(DataProviderRunner::class)
 class KtListLexerTests {
+
     @test
     fun itReturnsIterator() {
         val lexer = ListLexer("")
@@ -17,90 +21,60 @@ class KtListLexerTests {
     }
 
     @test
-    fun itHasNextIfFirst() {
-        val iterator = ListLexer("").iterator()
+    fun EmptyStringIsEmptyIterator() {
+        val iterator = ListLexer("")
 
-        assertTrue(iterator.hasNext())
+        assertEquals(0, iterator.count())
     }
 
     @test
-    fun itDoesNotHaveMoreElementWhenAlreadyCalled() {
-        val iterator = ListLexer("").iterator()
+    fun BlankStringIsEmptyIterator(){
+        val iterator = ListLexer("  ")
 
-        iterator.next()
-        assertFalse("Second time in empty string it should have not more element", iterator.hasNext())
+        assertEquals(0, iterator.count())
+    }
+
+    companion object {
+        @dataProvider
+        @JvmStatic fun tokenProvider() = arrayOf(
+                arrayOf("]", TokenName.RBRACK),
+                arrayOf("[", TokenName.LBRACK),
+                arrayOf(",", TokenName.COMMA),
+                arrayOf("a", TokenName.NAME),
+                arrayOf("ab", TokenName.NAME),
+                arrayOf("zebra", TokenName.NAME))
     }
 
     @test
-    fun itHasTokenIfEmpty() {
-        val iterator = ListLexer("").iterator()
+    @useProvider("tokenProvider")
+    fun itReturnsCorrectToken(text: String, expected: TokenName) {
+        val lexer = ListLexer(text)
 
-        assertNotNull(iterator.next())
-    }
+        assertEquals(1, lexer.count())
+        val token = lexer.last()
 
-    @test
-    fun itHasEofTokenWhenOnlyBlanks(){
-        val iterator = ListLexer("  ").iterator()
-        val token = iterator.next()
-
-        assertThat(token.type, `is`(TokenName.EOF))
-    }
-
-    @test
-    fun itReturnsEofTokenWhenEmpty() {
-        val iterator = ListLexer("").iterator()
-        val token = iterator.next()
-
-        assertThat(token.type, `is`(TokenName.EOF))
-    }
-
-    @test
-    fun itReturnsLeftBracketWhenPresent() {
-        val expected = Token(TokenName.LBRACK, "[")
-        assertTokenIs(expected, "[")
-    }
-
-    @test
-    fun itReturnsCommaWhenPresent() {
-        val expected = Token(TokenName.COMMA, ",")
-        assertTokenIs(expected, ",")
-    }
-
-    @test
-    fun itReturnsRightBrackedWhenPresent() {
-        val expected = Token(TokenName.RBRACK, "]")
-        assertTokenIs(expected, "]")
-    }
-
-    @test
-    fun itCanExtractName() {
-        val expected = Token(TokenName.NAME, "a")
-        assertTokenIs(expected, "a")
-    }
-
-//    fun itCanParseExpression() {
-//        val lexer = ListLexer("[a")
-//        val iterator = lexer.iterator()
-//
-//        assertTrue(iterator.hasNext())
-//
-//        var token = iterator.next()
-//        assertNotNull(token)
-//
-//        assertEquals(TokenName.LBRACK, token.type)
-//
-//        assertTrue(iterator.hasNext())
-//    }
-
-    private fun assertTokenIs(expected: Token, input: String) {
-        val lexer = ListLexer(input)
-        val iterator = lexer.iterator()
-        val token = iterator.next()
-
-        assertThat(iterator.hasNext(), `is`(true))
         assertNotNull(token)
+        assertEquals(text, token.text)
+        assertEquals(expected, token.type)
+    }
 
-        assertThat(token.type, `is`(expected.type))
-        assertThat(token.text, `is`(expected.text))
+    @test
+    fun itCanParseList()
+    {
+        val lexer = ListLexer("[a,b, casa]")
+
+        assertEquals(7, lexer.count())
+
+        assertEquals(TokenName.LBRACK, lexer.elementAt(0).type)
+        assertEquals(TokenName.NAME, lexer.elementAt(1).type)
+        assertEquals(TokenName.COMMA, lexer.elementAt(2).type)
+        assertEquals(TokenName.NAME, lexer.elementAt(3).type)
+        assertEquals(TokenName.COMMA, lexer.elementAt(4).type)
+        assertEquals(TokenName.NAME, lexer.elementAt(5).type)
+        assertEquals(TokenName.RBRACK, lexer.elementAt(6).type)
+
+        assertEquals("a", lexer.elementAt(1).text)
+        assertEquals("b", lexer.elementAt(3).text)
+        assertEquals("casa", lexer.elementAt(5).text)
     }
 }

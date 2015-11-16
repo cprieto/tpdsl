@@ -1,7 +1,9 @@
 package com.cprieto.learning.tpdsl.kt
 
+import java.util.NoSuchElementException
+
 enum class TokenName {
-    LBRACK, NAME, COMMA, RBRACK, EOF
+    LBRACK, NAME, COMMA, RBRACK
 }
 
 data class Token(val type:TokenName, val text: String) {
@@ -24,51 +26,56 @@ class StringTokenIterator(private val input: String) : Iterable<Char> {
             override fun hasNext() = currentPosition < cleaned.length
         }
     }
+
+    operator fun get(index: Int):Char = cleaned[index]
+    val size = cleaned.length
 }
 
-fun Char.choseTokenFromChar():Token? =
-    when(this) {
-        '[' -> Token(TokenName.LBRACK, "[")
-        ',' -> Token(TokenName.COMMA, ",")
-        ']' -> Token(TokenName.RBRACK, "]")
-        else -> null
-    }
-
 class ListLexer(private val input: String):  Iterable<Token> {
-    private val EOF = (-1).toChar()
-
     override fun iterator(): Iterator<Token> {
         if (input.isBlank())
             return object: Iterator<Token> {
-                private var counter = 0
-                override fun next(): Token {
-                    if (counter++ >= 1)
-                        throw StringIndexOutOfBoundsException()
-                    return Token(TokenName.EOF, "<EOF>")
-                }
+                override fun next(): Token = throw StringIndexOutOfBoundsException()
 
-                override fun hasNext() = counter == 0
+                override fun hasNext() = false
             }
 
         return object: Iterator<Token> {
+            private val entry = StringTokenIterator(input)
+            private val total = entry.count()
             private var currentPosition = 0
-            private val currentCharacter: Char
-                get() = input[currentPosition]
 
             override fun next(): Token {
-                val token = currentCharacter.choseTokenFromChar() ?: tryNameOrEof(currentCharacter)
+                if (currentPosition == total)
+                    throw NoSuchElementException()
 
-                return token
+                val currentChar = entry[currentPosition++]
+                when (currentChar) {
+                    ']' -> return Token(TokenName.RBRACK, "]")
+                    '[' -> return Token(TokenName.LBRACK, "[")
+                    ',' -> return Token(TokenName.COMMA, ",")
+                    else -> return getNameToken(currentChar)
+                }
             }
 
-            private fun tryNameOrEof(item: Char): Token {
-                return if (item.isLetter())
-                    Token(TokenName.NAME, item.toString())
-                else Token(TokenName.EOF, "<EOF>")
+            private fun getNameToken(current: Char): Token {
+                fun shouldAppend() =
+                    currentPosition < total && entry[currentPosition].isLetter()
+
+                if (!current.isLetter())
+                    throw Error("Unrecognized character $current")
+
+                val buffer = StringBuilder()
+                buffer.append(current)
+
+                while (shouldAppend()) {
+                    buffer.append(entry[currentPosition++])
+                }
+
+                return Token(TokenName.NAME, buffer.toString())
             }
 
-
-            override fun hasNext(): Boolean = currentPosition <= input.length
+            override fun hasNext() = currentPosition < total
         }
     }
 }

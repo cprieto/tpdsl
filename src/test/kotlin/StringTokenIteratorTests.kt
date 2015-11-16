@@ -31,4 +31,16 @@ class StringTokenIteratorTests {
         val iterator = StringTokenIterator("a b c")
         assertThat(iterator.count(), `is`(3))
     }
+
+    @test
+    fun itTreatsIteratorAsIndexer() {
+        val iterator = StringTokenIterator("abc")
+        assertThat(iterator[1], `is`('b'))
+    }
+
+    @test
+    fun itReportsCorrectSize() {
+        val iterator = StringTokenIterator("abc")
+        assertThat(iterator.size, `is`(3))
+    }
 }
