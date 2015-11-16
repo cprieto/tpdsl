@@ -6,7 +6,7 @@ enum class TokenName {
     LBRACK, NAME, COMMA, RBRACK
 }
 
-data class Token(val type:TokenName, val text: String) {
+data class Token(val type: TokenName, val text: String) {
     override fun toString() = "<'$text', $type>"
 }
 
@@ -27,55 +27,61 @@ class StringTokenIterator(private val input: String) : Iterable<Char> {
         }
     }
 
-    operator fun get(index: Int):Char = cleaned[index]
+    operator fun get(index: Int): Char = cleaned[index]
     val size = cleaned.length
 }
 
-class ListLexer(private val input: String):  Iterable<Token> {
+abstract class Lexer(protected val input: String) : Iterable<Token> {
+    abstract fun getTokenIterator(): Iterator<Token>
+
     override fun iterator(): Iterator<Token> {
         if (input.isBlank())
-            return object: Iterator<Token> {
+            return object : Iterator<Token> {
                 override fun next(): Token = throw StringIndexOutOfBoundsException()
 
                 override fun hasNext() = false
             }
+        return getTokenIterator()
+    }
+}
 
-        return object: Iterator<Token> {
-            private val entry = StringTokenIterator(input)
-            private val total = entry.count()
-            private var currentPosition = 0
+class ListLexer(input: String) : Lexer(input) {
+    override fun getTokenIterator() = object : Iterator<Token> {
+        private val entry = StringTokenIterator(input)
+        private val total = entry.count()
+        private var currentPosition = 0
 
-            override fun next(): Token {
-                if (currentPosition == total)
-                    throw NoSuchElementException()
+        override fun next(): Token {
+            if (currentPosition == total)
+                throw NoSuchElementException()
 
-                val currentChar = entry[currentPosition++]
-                when (currentChar) {
-                    ']' -> return Token(TokenName.RBRACK, "]")
-                    '[' -> return Token(TokenName.LBRACK, "[")
-                    ',' -> return Token(TokenName.COMMA, ",")
-                    else -> return getNameToken(currentChar)
-                }
-            }
+            return choseToken(entry[currentPosition++])
+        }
 
-            private fun getNameToken(current: Char): Token {
-                fun shouldAppend() =
+        private fun getNameToken(current: Char): Token {
+            fun shouldAppend() =
                     currentPosition < total && entry[currentPosition].isLetter()
 
-                if (!current.isLetter())
-                    throw Error("Unrecognized character $current")
+            if (!current.isLetter())
+                throw Error("Unrecognized character $current")
 
-                val buffer = StringBuilder()
-                buffer.append(current)
+            val buffer = StringBuilder()
+            buffer.append(current)
 
-                while (shouldAppend()) {
-                    buffer.append(entry[currentPosition++])
-                }
-
-                return Token(TokenName.NAME, buffer.toString())
+            while (shouldAppend()) {
+                buffer.append(entry[currentPosition++])
             }
 
-            override fun hasNext() = currentPosition < total
+            return Token(TokenName.NAME, buffer.toString())
         }
+
+        private fun choseToken(current: Char) = when (current) {
+            ']' -> Token(TokenName.RBRACK, "]")
+            '[' -> Token(TokenName.LBRACK, "[")
+            ',' -> Token(TokenName.COMMA, ",")
+            else -> getNameToken(current)
+        }
+
+        override fun hasNext() = currentPosition < total
     }
 }
