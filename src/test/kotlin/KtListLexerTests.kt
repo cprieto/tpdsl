@@ -1,13 +1,12 @@
 package com.cprieto.learning.tpdsl.kt
 
-import com.tngtech.java.junit.dataprovider.DataProvider as dataProvider
-import org.junit.Test as test
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertEquals
 import com.tngtech.java.junit.dataprovider.DataProviderRunner
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import com.tngtech.java.junit.dataprovider.DataProvider as dataProvider
 import com.tngtech.java.junit.dataprovider.UseDataProvider as useProvider
+import org.junit.Test as test
 import org.junit.runner.RunWith as runWith
-
 
 
 @runWith(DataProviderRunner::class)
@@ -34,6 +33,13 @@ class KtListLexerTests {
         assertEquals(0, iterator.count())
     }
 
+    @test
+    @useProvider("emptyProvider")
+    fun blankOrEmptyLexerIsTrue(emptyEntry: String, expected: Boolean) {
+        val lexer = ListLexer(emptyEntry)
+        assertEquals(lexer.isBlank(), expected)
+    }
+
     companion object {
         @dataProvider
         @JvmStatic fun tokenProvider() = arrayOf(
@@ -43,6 +49,13 @@ class KtListLexerTests {
                 arrayOf("a", TokenName.NAME),
                 arrayOf("ab", TokenName.NAME),
                 arrayOf("zebra", TokenName.NAME))
+
+        @dataProvider
+        @JvmStatic fun emptyProvider() = arrayOf(
+                arrayOf("", true),
+                arrayOf(" ", true),
+                arrayOf("[", false)
+        )
     }
 
     @test

@@ -1,5 +1,6 @@
 package com.cprieto.learning.tpdsl.kt
 
+import java.text.ParseException
 import java.util.NoSuchElementException
 
 enum class TokenName {
@@ -32,6 +33,8 @@ class StringTokenIterator(private val input: String) : Iterable<Char> {
 }
 
 abstract class Lexer(protected val input: String) : Iterable<Token> {
+    fun isBlank() = input.isBlank()
+
     abstract fun getTokenIterator(): Iterator<Token>
 
     override fun iterator(): Iterator<Token> {
@@ -83,5 +86,60 @@ class ListLexer(input: String) : Lexer(input) {
         }
 
         override fun hasNext() = currentPosition < total
+    }
+}
+
+abstract class Parser(protected val lexer: Lexer) {
+    private val iterator = lexer.iterator()
+    protected var lookahead: Token? = null
+    private var endOfFile = false
+
+    init {
+        if (lexer.isBlank())
+            throw IllegalArgumentException("Empty entries cannot be parsed")
+        consume()
+    }
+
+    private fun consume() {
+        if (!iterator.hasNext())
+            endOfFile = true
+        else
+            lookahead = iterator.next()
+    }
+
+    protected fun match(token: TokenName) {
+        if (endOfFile)
+            throw ParseException("Expected $token instead got End of File", 0)
+
+        if (lookahead!!.type != token)
+            throw ParseException("Expected $token instead got ${lookahead!!.type}", 0)
+
+        consume()
+    }
+}
+
+/*
+list:     '[' elements ']';
+elements: element (',' element)*;
+element: NAME
+NAME: ('a'-'z'|'Z'-'Z')+;
+ */
+class SimpleListParser(lexer: Lexer) : Parser(lexer) {
+    fun list() {
+        match(TokenName.LBRACK)
+        elements()
+        match(TokenName.RBRACK)
+    }
+
+    private fun elements() {
+        element()
+        while (lookahead?.type == TokenName.COMMA) {
+            match(TokenName.COMMA)
+            element()
+        }
+    }
+
+    private fun element() {
+        match(TokenName.NAME)
     }
 }
