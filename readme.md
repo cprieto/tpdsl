@@ -20,3 +20,12 @@ elements: element (',' element)*;
 element : NAME;
 NAME    : ('a'..'z'|'A'-'Z')+;
 ```
+
+Now we can extend our grammar to support nested lists
+
+```
+list    : '[' elements ']';
+elements: element (',' element)*;
+element : NAME | list;
+NAME    : ('a'..'z'|'A'-'Z')+;
+```

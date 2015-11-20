@@ -121,7 +121,7 @@ abstract class Parser(protected val lexer: Lexer) {
 /*
 list:     '[' elements ']';
 elements: element (',' element)*;
-element: NAME
+element: NAME | list;
 NAME: ('a'-'z'|'Z'-'Z')+;
  */
 class SimpleListParser(lexer: Lexer) : Parser(lexer) {
@@ -140,6 +140,11 @@ class SimpleListParser(lexer: Lexer) : Parser(lexer) {
     }
 
     private fun element() {
-        match(TokenName.NAME)
+        if (lookahead?.type == TokenName.NAME)
+            match(TokenName.NAME)
+        else if (lookahead?.type == TokenName.LBRACK)
+            list()
+        else
+            throw ParseException("Unrecognized character or token", 0)
     }
 }

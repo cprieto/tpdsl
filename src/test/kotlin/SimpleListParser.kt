@@ -57,4 +57,12 @@ class SimpleListParserTest {
 
         parser.list()
     }
+
+    @test
+    fun itShouldSupportNestedList() {
+        val lexer = ListLexer("[a,b,[c,d],e]")
+        val parser = SimpleListParser(lexer)
+
+        parser.list()
+    }
 }
