@@ -2,9 +2,10 @@ package com.cprieto.learning.tpdsl.kt
 
 import java.text.ParseException
 import java.util.NoSuchElementException
+import kotlin.jvm.internal.iterator
 
 enum class TokenName {
-    LBRACK, NAME, COMMA, RBRACK
+    LBRACK, NAME, COMMA, RBRACK, EQUALS
 }
 
 data class Token(val type: TokenName, val text: String) {
@@ -82,6 +83,7 @@ class ListLexer(input: String) : Lexer(input) {
             ']' -> Token(TokenName.RBRACK, "]")
             '[' -> Token(TokenName.LBRACK, "[")
             ',' -> Token(TokenName.COMMA, ",")
+            '=' -> Token(TokenName.EQUALS, "=")
             else -> getNameToken(current)
         }
 
@@ -147,4 +149,70 @@ class SimpleListParser(lexer: Lexer) : Parser(lexer) {
         else
             throw ParseException("Unrecognized character or token", 0)
     }
+}
+
+abstract class BufferedParser(protected val lexer: Lexer, private val bufferSize: Int) {
+    private val iterator = lexer.iterator()
+    protected var buffer = arrayOfNulls<Token>(bufferSize)
+    private var position = 0
+
+    init {
+        if (lexer.isBlank())
+            throw IllegalArgumentException("Empty entries cannot be parsed")
+        for (i in 1..bufferSize)
+            consume()
+    }
+
+    private fun consume() {
+        buffer[position] = if (iterator.hasNext()) iterator.next() else null
+        position = (position + 1) % bufferSize
+    }
+
+    fun tokenAt(idx: Int):Token? = buffer[(position + idx -1) % bufferSize]
+    fun tokenAhead(idx: Int): Token? = tokenAt(idx)
+
+    protected fun match(token: TokenName) {
+
+        val lookahead = tokenAhead(1)?.type
+                ?: throw ParseException("Expected $token instead got End of File", 0)
+
+        if (lookahead != token)
+            throw ParseException("Expected $token instead got ${tokenAt(1)}", 0)
+        consume()
+    }
+}
+
+class BufferedListParser(lexer: Lexer, bufferSize: Int): BufferedParser(lexer, bufferSize) {
+    fun list() {
+        match(TokenName.LBRACK)
+        elements()
+        match(TokenName.RBRACK)
+    }
+
+    private fun elements() {
+        element()
+        while (tokenAhead(1)?.type == TokenName.COMMA) {
+            match(TokenName.COMMA)
+            element()
+        }
+    }
+
+    private fun element() {
+        val isAssignation = tokenAhead(2)?.type == TokenName.EQUALS
+
+        if (isAssignation()) {
+            match(TokenName.NAME)
+            match(TokenName.EQUALS)
+            match(TokenName.NAME)
+        } else if (tokenAhead(1)?.type == TokenName.NAME)
+            match(TokenName.NAME)
+        else if (tokenAhead(1)?.type == TokenName.LBRACK)
+            list()
+        else
+            throw ParseException("Expected name or list, got ${tokenAt(1)?.type}", 0)
+    }
+
+    private fun isAssignation() =
+            tokenAhead(1)?.type == TokenName.NAME
+            && tokenAhead(2)?.type == TokenName.EQUALS
 }
